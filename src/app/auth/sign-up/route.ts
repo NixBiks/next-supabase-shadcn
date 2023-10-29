@@ -1,17 +1,16 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-
-export const dynamic = 'force-dynamic'
+import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url)
   const formData = await request.formData()
   const email = String(formData.get('email'))
   const password = String(formData.get('password'))
-  const supabase = createRouteHandlerClient({ cookies })
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
-  const response = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -19,9 +18,9 @@ export async function POST(request: Request) {
     },
   })
 
-  if (response.error) {
+  if (error) {
     return NextResponse.redirect(
-      `${requestUrl.origin}/login?error=${response.error.message}`,
+      `${requestUrl.origin}/login?error=Could not authenticate user`,
       {
         // a 301 status is required to redirect from a POST to a GET route
         status: 301,
